@@ -399,3 +399,16 @@ FodyWeavers.xsd
 
 # JetBrains Rider
 *.sln.iml
+
+*.mp4
+
+# CMake spécifiques
+/out/
+/build/
+CMakeSettings.json
+CMakePresets.json
+CMakeCache.txt
+CMakeFiles/
+build.ninja
+rules.ninja
+cmake_install.cmake
