@@ -5,31 +5,32 @@ using namespace cv;
 using namespace std;
 
 int main() {
-    // 1. Chargement de la vidéo
-    VideoCapture cap("C://Users//fehre//OneDrive//Documents//ENSEEIHT//IA_Drone//Drone_Mapper//Test_Mapper.mp4");
+    VideoCapture cap("C://Users//fehre//OneDrive//Documents//ENSEEIHT//IA_Drone//Drone_Mapper//DroneVideo.mp4");
     if (!cap.isOpened()) {
-        cout << "Erreur : Impossible d'ouvrir la vidéo." << endl;
+        cout << "Error" << endl;
         return -1;
     }
 
-    // 2. Initialisation ORB (Plus de points pour plus de précision)
-    Ptr<ORB> detector = ORB::create(2000);
+    // OBR initialisation
+    Ptr<ORB> detector = ORB::create(500);
     Ptr<DescriptorMatcher> matcher = DescriptorMatcher::create("BruteForce-Hamming");
 
     Mat frame, prevFrame, prevDesc;
     vector<KeyPoint> prevKP;
 
-    // 3. Canvas Géant
-    Mat canvas = Mat::zeros(4000, 4000, CV_8UC3);
+	// Initialisation of the map and the homography matrix
+    Mat map = Mat::zeros(4000, 4000, CV_8UC3);
     Mat H_global = Mat::eye(3, 3, CV_64F);
 
-    // Position de départ au centre du canvas
-    H_global.at<double>(0, 2) = 1500;
-    H_global.at<double>(1, 2) = 1500;
+	// We start in the middle of the map
+    H_global.at<double>(0, 2) = 2000;
+    H_global.at<double>(1, 2) = 2000;
+    int frameCount = 0;
 
     while (cap.read(frame)) {
-        // Optionnel : resize pour fluidité si vidéo 4K
-        // resize(frame, frame, Size(), 0.5, 0.5);
+		// Prossess one frame out of 10
+        frameCount++;
+        if (frameCount % 10 != 0) continue;
 
         vector<KeyPoint> kp;
         Mat desc;
@@ -39,10 +40,11 @@ int main() {
             vector<DMatch> matches;
             matcher->match(desc, prevDesc, matches);
 
-            // Filtre de qualité : on ne garde que les 100 meilleurs
+            // keep the 50 best points
             sort(matches.begin(), matches.end());
-            if (matches.size() > 100) matches.erase(matches.begin() + 100, matches.end());
+            if (matches.size() > 50) matches.erase(matches.begin() + 50, matches.end());
 
+            // extract the matched keypoints
             vector<Point2f> srcPts, dstPts;
             for (auto& m : matches) {
                 srcPts.push_back(kp[m.queryIdx].pt);
@@ -50,47 +52,41 @@ int main() {
             }
 
             if (srcPts.size() >= 4) {
-                // --- ASTUCE STABILITE : ESTIMATE AFFINE AU LIEU DE HOMOGRAPHY ---
-                // Calcule translation + rotation + scale uniquement
+                // estimation of the mouvement
                 Mat affine = estimateAffinePartial2D(srcPts, dstPts, noArray(), RANSAC);
 
                 if (!affine.empty()) {
-                    // Convertir la matrice 2x3 en 3x3 pour la multiplication
+                    // Update the global homography
                     Mat H_local = Mat::eye(3, 3, CV_64F);
                     affine.copyTo(H_local.rowRange(0, 2));
-
-                    // Accumulation
                     H_global = H_global * H_local;
 
-                    // Dessin sur le canvas
-                    // 1. Créer une image temporaire pour la frame déformée
-                    Mat warped_frame;
-                    warpPerspective(frame, warped_frame, H_global, canvas.size(), INTER_LINEAR, BORDER_CONSTANT, Scalar(0, 0, 0));
+                    // Update the map
 
-                    // 2. Créer un masque : là où la nouvelle image n'est pas noire
-                    Mat mask;
-                    cvtColor(warped_frame, mask, COLOR_BGR2GRAY);
-                    threshold(mask, mask, 1, 255, THRESH_BINARY);
+                // Image correction
+                Mat warped_frame, mask;
+                warpPerspective(frame, warped_frame, H_global, map.size(), INTER_LINEAR, BORDER_CONSTANT, Scalar(0, 0, 0));
+                cvtColor(warped_frame, mask, COLOR_BGR2GRAY);
+                threshold(mask, mask, 1, 255, THRESH_BINARY);
+                Mat kernel = getStructuringElement(MORPH_RECT, Size(5, 5));
+                erode(mask, mask, kernel);
 
-                    // 3. Copier uniquement la nouvelle image sur le canvas en utilisant le masque
-                    warped_frame.copyTo(canvas, mask);
+		        // update the map
+                warped_frame.copyTo(map, mask);
                 }
             }
         }
 
-        // Affichage du résultat réduit
+        // Show the result
         Mat display;
-        resize(canvas, display, Size(), 0.2, 0.2); // Zoom arrière pour voir la carte
-        imshow("Drone Mapper - Press ESC to quit", display);
+        resize(map, display, Size(), 0.2, 0.2); // Zoom back to see the map
+        imshow("Drone Mapper", display);
 
         prevFrame = frame.clone();
         prevDesc = desc.clone();
         prevKP = kp;
-
+        
         if (waitKey(1) == 27) break;
     }
-
-    // Sauvegarde finale pour ton CV
-    imwrite("ma_carte_drone.jpg", canvas);
     return 0;
 }
