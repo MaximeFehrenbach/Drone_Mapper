@@ -12,25 +12,26 @@ int main() {
     }
 
     // OBR initialisation
-    Ptr<ORB> detector = ORB::create(500);
+    Ptr<ORB> detector = ORB::create(100);
     Ptr<DescriptorMatcher> matcher = DescriptorMatcher::create("BruteForce-Hamming");
 
     Mat frame, prevFrame, prevDesc;
     vector<KeyPoint> prevKP;
 
 	// Initialisation of the map and the homography matrix
-    Mat map = Mat::zeros(4000, 4000, CV_8UC3);
+    Mat map = Mat::zeros(1000, 1000, CV_8UC3);
     Mat H_global = Mat::eye(3, 3, CV_64F);
 
 	// We start in the middle of the map
-    H_global.at<double>(0, 2) = 2000;
-    H_global.at<double>(1, 2) = 2000;
+    H_global.at<double>(0, 2) = 500;
+    H_global.at<double>(1, 2) = 500;
     int frameCount = 0;
 
     while (cap.read(frame)) {
 		// Prossess one frame out of 10
         frameCount++;
-        if (frameCount % 10 != 0) continue;
+        if (frameCount % 60 != 0) continue;
+        resize(frame, frame, Size(), 0.2, 0.2, INTER_LINEAR);
 
         vector<KeyPoint> kp;
         Mat desc;
@@ -40,9 +41,9 @@ int main() {
             vector<DMatch> matches;
             matcher->match(desc, prevDesc, matches);
 
-            // keep the 50 best points
+            // keep the 20 best points
             sort(matches.begin(), matches.end());
-            if (matches.size() > 50) matches.erase(matches.begin() + 50, matches.end());
+            if (matches.size() > 20) matches.erase(matches.begin() + 20, matches.end());
 
             // extract the matched keypoints
             vector<Point2f> srcPts, dstPts;
@@ -79,8 +80,8 @@ int main() {
 
         // Show the result
         Mat display;
-        resize(map, display, Size(), 0.2, 0.2); // Zoom back to see the map
-        imshow("Drone Mapper", display);
+        resize(map, display, Size(), 1, 1); // Zoom back to see the map
+        cv::imshow ("Drone Mapper", display);
 
         prevFrame = frame.clone();
         prevDesc = desc.clone();
