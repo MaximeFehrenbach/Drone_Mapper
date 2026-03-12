@@ -2,7 +2,7 @@
 #include "Mapper.hpp"
 
 int main() {
-    cv::VideoCapture cap("C://Users//fehre//OneDrive//Documents//ENSEEIHT//IA_Drone//Drone_Mapper//DroneVideo.mp4");
+    cv::VideoCapture cap("DroneVideo.mp4");
     if (!cap.isOpened()) {
         std::cout << "Error" << std::endl;
         return -1;
