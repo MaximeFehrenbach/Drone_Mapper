@@ -3,7 +3,7 @@
 Ce projet implémente un système de cartographie aérienne en temps réel,
 capable de générer une vue d'ensemble à partir d'un flux vidéo de drone en mouvement.
 
-![Démonstration du mapping](map_result.gif)
+https://github.com/MaximeFehrenbach/Drone_Mapper/raw/refs/heads/main/map_result.mp4
 
 ## Fonctionnalités
 * **Extraction de Caractéristiques (ORB)** : Utilisation de l'algorithme ORB pour détecter et suivre des points d'intérêt robustes sur le terrain.
