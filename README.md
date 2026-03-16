@@ -3,7 +3,7 @@
 Ce projet implémente un système de cartographie aérienne en temps réel,
 capable de générer une vue d'ensemble à partir d'un flux vidéo de drone en mouvement.
 
-### [Cliquez ici pour voir la démonstration vidéo](map_result.mp4)
+### [Cliquez ici pour voir la démonstration vidéo](https://github.com/MaximeFehrenbach/Drone_Mapper/raw/refs/heads/main/map_result.mp4)
 <p align="center">
   <a href="map_result.mp4?raw=true">
     <img src="map_result.png" alt="Démonstration du Drone Mapper" width="400">
